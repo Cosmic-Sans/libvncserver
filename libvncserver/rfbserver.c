@@ -229,7 +229,7 @@ rfbClientIteratorNext(rfbClientIteratorPtr i)
 
 #ifdef LIBVNCSERVER_HAVE_LIBPTHREAD
     if(!i->closedToo)
-      while(i->next && i->next->sock<0)
+      while(i->next && i->next->sock==INVALID_SOCKET)
         i->next = i->next->next;
     if(i->next)
       rfbIncrClientRef(i->next);
@@ -253,7 +253,7 @@ rfbReleaseClientIterator(rfbClientIteratorPtr iterator)
 
 void
 rfbNewClientConnection(rfbScreenInfoPtr rfbScreen,
-                       int sock)
+                       SOCKET sock)
 {
     rfbNewClient(rfbScreen,sock);
 }
@@ -269,7 +269,7 @@ rfbReverseConnection(rfbScreenInfoPtr rfbScreen,
                      char *host,
                      int port)
 {
-    int sock;
+    SOCKET sock;
     rfbClientPtr cl;
 
     if ((sock = rfbConnect(rfbScreen, host, port)) < 0)
@@ -306,7 +306,7 @@ rfbSetProtocolVersion(rfbScreenInfoPtr rfbScreen, int major_, int minor_)
 
 static rfbClientPtr
 rfbNewTCPOrUDPClient(rfbScreenInfoPtr rfbScreen,
-                     int sock,
+                     SOCKET sock,
                      rfbBool isUDP)
 {
     rfbProtocolVersionMsg pv;
@@ -522,7 +522,7 @@ rfbNewTCPOrUDPClient(rfbScreenInfoPtr rfbScreen,
 
 rfbClientPtr
 rfbNewClient(rfbScreenInfoPtr rfbScreen,
-             int sock)
+             SOCKET sock)
 {
   return(rfbNewTCPOrUDPClient(rfbScreen,sock,FALSE));
 }
@@ -570,7 +570,7 @@ rfbClientConnectionGone(rfbClientPtr cl)
     }
 #endif
 
-    if(cl->sock>=0)
+    if(cl->sock!=INVALID_SOCKET)
 	close(cl->sock);
 
     if (cl->scaledScreen!=NULL)
@@ -586,7 +586,7 @@ rfbClientConnectionGone(rfbClientPtr cl)
     free(cl->beforeEncBuf);
     free(cl->afterEncBuf);
 
-    if(cl->sock>=0)
+    if(cl->sock!=INVALID_SOCKET)
        FD_CLR(cl->sock,&(cl->screen->allFds));
 
     cl->clientGoneHook(cl);
@@ -3611,7 +3611,7 @@ rfbSendExtDesktopSize(rfbClientPtr cl,
 rfbBool
 rfbSendUpdateBuf(rfbClientPtr cl)
 {
-    if(cl->sock<0)
+    if(cl->sock==INVALID_SOCKET)
       return FALSE;
 
     if (rfbWriteExact(cl, cl->updateBuf, cl->ublen) < 0) {
@@ -3760,7 +3760,7 @@ static unsigned char ptrAcceleration = 50;
 
 void
 rfbNewUDPConnection(rfbScreenInfoPtr rfbScreen,
-                    int sock)
+                    SOCKET sock)
 {
   if (write(sock, (char*) &ptrAcceleration, 1) < 0) {
 	rfbLogPerror("rfbNewUDPConnection: write");

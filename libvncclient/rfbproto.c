@@ -36,10 +36,6 @@
 #endif
 #include <errno.h>
 #include <rfb/rfbclient.h>
-#ifdef WIN32
-#undef SOCKET
-#undef socklen_t
-#endif
 #ifdef LIBVNCSERVER_HAVE_LIBZ
 #include <zlib.h>
 #ifdef __CHECKER__
@@ -320,7 +316,7 @@ ConnectToRFBServer(rfbClient* client,const char *hostname, int port)
       fclose(rec->file);
       return FALSE;
     }
-    client->sock = -1;
+    client->sock = INVALID_SOCKET;
     return TRUE;
   }
 
@@ -347,7 +343,7 @@ ConnectToRFBServer(rfbClient* client,const char *hostname, int port)
     }
   }
 
-  if (client->sock < 0) {
+  if (client->sock == INVALID_SOCKET) {
     rfbClientLog("Unable to connect to VNC server\n");
     return FALSE;
   }
@@ -383,7 +379,7 @@ rfbBool ConnectToRFBRepeater(rfbClient* client,const char *repeaterHost, int rep
     client->sock = ConnectClientToTcpAddr(host, repeaterPort);
   }
 
-  if (client->sock < 0) {
+  if (client->sock == INVALID_SOCKET) {
     rfbClientLog("Unable to connect to VNC repeater\n");
     return FALSE;
   }
